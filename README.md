@@ -163,6 +163,7 @@ Create a `README.md` in your plugin folder documenting:
 - Each country has shared utilities: `plugins/BR/utils.ts` (`parseBRAmount`, `PT_MONTHS`), `plugins/CA/utils.ts` (`parseCADAmount`, `EN_MONTHS`).
 - Use `pdf-parse` or `pdfjs-dist` to inspect the raw extracted text — it often looks very different from the visual PDF.
 - Negative amounts = expenses, positive = income.
+- Parsers may fill the optional importer fields `account`, `counterAccount`, `payee`, `externalId`, `bookingDate`, `exchangeRate` and `notes`; the JSON export includes them. For a transfer between own accounts, give both sides the same `externalId` and set `counterAccount`.
 
 ## Project Structure
 
