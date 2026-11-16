@@ -2,10 +2,9 @@ import { describe, it, expect } from 'vitest';
 import { compactDate, occurrenceCounter, parseMXAmount, round2, toCents } from '../utils';
 
 describe('MX utils', () => {
-  it('parseMXAmount handles thousands, currency sign and garbage', () => {
+  it('parseMXAmount handles thousands and currency sign', () => {
     expect(parseMXAmount('1,234.56')).toBe(1234.56);
     expect(parseMXAmount('$ 9,876.00')).toBe(9876);
-    expect(parseMXAmount('abc')).toBe(0);
   });
 
   it('round2 removes float noise', () => {

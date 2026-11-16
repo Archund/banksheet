@@ -1,8 +1,6 @@
 /** Parse a Mexican-peso amount like "1,234.56" (comma thousands, dot decimal) into a number. */
 export function parseMXAmount(raw: string): number {
-  const cleaned = raw.replace(/[$\s,]/g, '');
-  const value = parseFloat(cleaned);
-  return Number.isNaN(value) ? 0 : value;
+  return parseFloat(raw.replace(/[$\s,]/g, ''));
 }
 
 /** Round to 2 decimals, avoiding float noise from balance arithmetic. */

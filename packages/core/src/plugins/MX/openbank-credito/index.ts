@@ -127,7 +127,9 @@ export const openbankCreditoParser: BankParser = {
       const { description, exchangeRate } = cleanDescription(rawDesc);
 
       const cents = toCents(amount);
-      const n = nextRegular(`${date}|${cents}|${description}`);
+      // Numbered per date + amount (exactly what the ID holds), so two different
+      // purchases of the same amount on the same day never share an ID.
+      const n = nextRegular(`${date}|${cents}`);
 
       const tx: Transaction = {
         date,
