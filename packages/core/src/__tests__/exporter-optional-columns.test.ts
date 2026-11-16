@@ -54,6 +54,19 @@ describe('exporter optional columns', () => {
     expect(csv.split('\n')[1]).toContain('"Bank, ""Main"""');
   });
 
+  it('exports every optional column with allColumns, even when unused', () => {
+    const [header, row] = exportCSV([plain], { allColumns: true }).split('\n');
+    expect(header).toBe(
+      'date,description,amount,currency,type,account,counter_account,payee,category,external_id,booking_date,exchange_rate,notes',
+    );
+    expect(row).toBe('2026-01-02,Coffee,-3.5,USD,debit,,,,,,,,');
+  });
+
+  it('keeps the same layout with allColumns whatever the transactions set', () => {
+    const header = (txns: Transaction[]) => exportCSV(txns, { allColumns: true }).split('\n')[0];
+    expect(header([{ ...plain, notes: 'n' }])).toBe(header([{ ...plain, account: 'Main' }]));
+  });
+
   it('includes optional fields in JSON', () => {
     const parsed = JSON.parse(exportJSON([{ ...plain, externalId: 'x' }]));
     expect(parsed[0].externalId).toBe('x');
@@ -68,5 +81,9 @@ describe('exporter optional columns', () => {
     const wb2 = new ExcelJS.Workbook();
     await wb2.xlsx.load(await exportExcel([plain]));
     expect((wb2.worksheets[0].getRow(1).values as unknown[]).slice(1)).toHaveLength(5);
+
+    const wb3 = new ExcelJS.Workbook();
+    await wb3.xlsx.load(await exportExcel([plain], { allColumns: true }));
+    expect((wb3.worksheets[0].getRow(1).values as unknown[]).slice(1)).toHaveLength(13);
   });
 });

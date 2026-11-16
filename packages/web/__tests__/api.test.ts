@@ -63,6 +63,16 @@ describe('POST /api/export', () => {
     expect(res.text).toContain('Test Purchase');
   });
 
+  it('exports every optional CSV column when allColumns is set', async () => {
+    const res = await request(app)
+      .post('/api/export')
+      .send({ transactions: sampleTransactions, format: 'csv', allColumns: true });
+    expect(res.status).toBe(200);
+    expect(res.text.split('\n')[0]).toBe(
+      'date,description,amount,currency,type,account,counter_account,payee,category,external_id,booking_date,exchange_rate,notes',
+    );
+  });
+
   it('exports JSON', async () => {
     const res = await request(app)
       .post('/api/export')

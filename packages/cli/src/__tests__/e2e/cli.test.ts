@@ -52,6 +52,7 @@ describe('CLI E2E', () => {
       expect(stdout).toContain('--format');
       expect(stdout).toContain('--output');
       expect(stdout).toContain('--bank');
+      expect(stdout).toContain('--all-columns');
     });
   });
 
