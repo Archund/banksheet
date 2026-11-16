@@ -26,6 +26,8 @@ describe('plugin registry', () => {
     expect(list).toContainEqual({ name: 'Porto Seguro Cartão', country: 'BR' });
     expect(list).toContainEqual({ name: 'PC Financial Mastercard', country: 'CA' });
     expect(list).toContainEqual({ name: 'Chase Credit', country: 'US' });
+    expect(list).toContainEqual({ name: 'Openbank Débito', country: 'MX' });
+    expect(list).toContainEqual({ name: 'Openbank Crédito', country: 'MX' });
   });
 
   it('getParserByName finds Bradesco Cartão', () => {
@@ -144,6 +146,32 @@ describe('detectBank', () => {
   it('detects Chase by JPMorgan Chase', () => {
     const result = detectBank('JPMorgan Chase Bank, N.A.', plugins);
     expect(result?.name).toBe('Chase Credit');
+  });
+
+  it('detects Openbank debit by transaction detail header', () => {
+    const result = detectBank('Emitido por Openbank México, S.A.\nDetalle de tus transacciones', plugins);
+    expect(result?.name).toBe('Openbank Débito');
+  });
+
+  it('detects Openbank credit card by regular movements header', () => {
+    const result = detectBank(
+      'Emitido por Openbank México, S.A.\nCARGOS, ABONOS Y COMPRAS REGULARES (NO A MESES)',
+      plugins,
+    );
+    expect(result?.name).toBe('Openbank Crédito');
+  });
+
+  it('keeps Openbank when a transfer concept names another bank', () => {
+    const result = detectBank(
+      'Emitido por Openbank México, S.A.\nDetalle de tus transacciones\n' +
+        '02/03/26 Transferencia SPEI enviada a Ahorro 1234, NUBANK, referencia $ 100.00 $ 0.00',
+      plugins,
+    );
+    expect(result?.name).toBe('Openbank Débito');
+  });
+
+  it('does not detect Openbank from the bank name alone', () => {
+    expect(detectBank('Transferencia recibida de Openbank', plugins)).toBeUndefined();
   });
 
   it('returns undefined for unknown text', () => {

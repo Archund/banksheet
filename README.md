@@ -32,9 +32,11 @@
 | BR | Nubank | Credit card | Yes |
 | BR | Porto Seguro | Credit card | Yes |
 | CA | PC Financial Mastercard | Credit card | Yes |
+| MX | Openbank | Credit card | Yes |
+| MX | Openbank | Debit account | Yes |
 | US | Chase | Credit card | No |
 
-Currently covers credit card statements only. More statement types (checking, savings) are welcome — see [Adding a Plugin](#adding-a-plugin).
+Mostly credit card statements for now. More statement types (checking, savings) are welcome — see [Adding a Plugin](#adding-a-plugin).
 
 ## Quick Start
 

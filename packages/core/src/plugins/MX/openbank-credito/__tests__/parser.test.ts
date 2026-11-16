@@ -174,6 +174,20 @@ describe('openbankCreditoParser', () => {
       expect(new Set(ids).size).toBe(ids.length);
     });
 
+    it('keeps externalIds unique for different purchases of the same amount on the same day', () => {
+      const text = [
+        'Emitido por Openbank México, S.A.',
+        'CARGOS, ABONOS Y COMPRAS REGULARES (NO A MESES)',
+        '10-03-2026 10-03-2026 Recarga Operador Demo de $50.0 al 0000000000 - $ 50.00',
+        '10-03-2026 11-03-2026 Compra en Tienda Ejemplo, Ciudad Ejemplo - $ 50.00',
+        'Total cargos + $ 100.00',
+      ].join('\n');
+      expect(openbankCreditoParser.parse(text).map(t => t.externalId)).toEqual([
+        'openbank-credito:20260310:-5000:1',
+        'openbank-credito:20260310:-5000:2',
+      ]);
+    });
+
     it('turns each installment into one charge of the required payment at the cut-off date', () => {
       const [first, second] = msi;
       expect(first).toMatchObject({

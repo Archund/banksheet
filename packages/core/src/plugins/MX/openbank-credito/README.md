@@ -36,8 +36,11 @@
 installment sum equals "Cargos compras a meses (capital)", on every sample statement.
 
 ## Known limitations
-- `COMPRAS Y CARGOS DIFERIDOS A MESES CON INTERESES` (installments with interest) are skipped: no sample.
-- Interest, fees and IVA only appear in summary boxes in the samples, not as movement rows.
+- **Not tested: anything with interest.** No sample statement had interest charged, so:
+  - `COMPRAS Y CARGOS DIFERIDOS A MESES CON INTERESES` (installments with interest) are skipped, not parsed;
+  - months where interest, fees or IVA are charged are untested. In the samples these only appear (as
+    `$ 0.00`) in summary boxes, not as movement rows; if a statement prints them as regular movements they
+    are parsed like any other row, otherwise they are missing from the output.
 - The card payment link assumes the payment is made from the Openbank debit account and that both statements
   print it on the same day. A payment from another bank labeled the same way would be linked to the debit
   account too (fix `counterAccount` in the importer if so).

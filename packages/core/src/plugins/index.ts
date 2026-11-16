@@ -12,6 +12,9 @@ import { openbankDebitoParser } from './MX/openbank-debito/index';
 
 /** All registered bank parsers */
 export const plugins: BankParser[] = [
+  // Openbank goes first: its detectors need two Openbank-specific markers, while
+  // transfer concepts in its statements can name other banks ("Nu", "Inter"...)
+  // that the broader detectors below would match.
   openbankDebitoParser,
   openbankCreditoParser,
   bradescoCartaoParser,
