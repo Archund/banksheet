@@ -1,9 +1,12 @@
 import ExcelJS from 'exceljs';
-import type { Transaction } from './types';
+import type { ExportOptions, Transaction } from './types';
 
 const BASE_COLUMNS = ['date', 'description', 'amount', 'currency', 'type'] as const;
 
-/** Optional columns: only exported when at least one transaction has a value. */
+/**
+ * Optional columns: by default only exported when at least one transaction has a
+ * value; with `allColumns` they are all exported, so the layout is always the same.
+ */
 const OPTIONAL_COLUMNS = [
   'account',
   'counterAccount',
@@ -43,7 +46,10 @@ function csvHeader(col: string): string {
   return col.replace(/[A-Z]/g, c => `_${c.toLowerCase()}`);
 }
 
-function activeColumns(transactions: Transaction[]): string[] {
+type ColumnOptions = Pick<ExportOptions, 'allColumns'>;
+
+function activeColumns(transactions: Transaction[], options: ColumnOptions): string[] {
+  if (options.allColumns) return [...BASE_COLUMNS, ...OPTIONAL_COLUMNS];
   const optional = OPTIONAL_COLUMNS.filter(col =>
     transactions.some(t => t[col] !== undefined && t[col] !== ''),
   );
@@ -55,8 +61,8 @@ function cell(t: Transaction, col: string): string {
   return v === undefined || v === null ? '' : String(v);
 }
 
-export function exportCSV(transactions: Transaction[]): string {
-  const columns = activeColumns(transactions);
+export function exportCSV(transactions: Transaction[], options: ColumnOptions = {}): string {
+  const columns = activeColumns(transactions, options);
   const header = columns.map(csvHeader).join(',');
   const rows = transactions.map(t => columns.map(col => escapeCSV(cell(t, col))).join(','));
   return [header, ...rows].join('\n');
@@ -66,11 +72,14 @@ export function exportJSON(transactions: Transaction[]): string {
   return JSON.stringify(transactions, null, 2);
 }
 
-export async function exportExcel(transactions: Transaction[]): Promise<Buffer> {
+export async function exportExcel(
+  transactions: Transaction[],
+  options: ColumnOptions = {},
+): Promise<Buffer> {
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet('Transactions');
 
-  const columns = activeColumns(transactions);
+  const columns = activeColumns(transactions, options);
   sheet.columns = columns.map(key => ({ key, ...EXCEL_HEADERS[key] }));
 
   for (const t of transactions) {

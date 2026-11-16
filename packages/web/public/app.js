@@ -20,6 +20,7 @@
   const summary = document.getElementById('summary');
   const toolbarInfo = document.getElementById('toolbarInfo');
   const searchInput = document.getElementById('searchInput');
+  const allColumnsInput = document.getElementById('allColumns');
   const tableBody = document.getElementById('tableBody');
   const themeToggle = document.getElementById('themeToggle');
 
@@ -243,7 +244,11 @@
       fetch('/api/export', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transactions: transactions, format: format }),
+        body: JSON.stringify({
+          transactions: transactions,
+          format: format,
+          allColumns: !!(allColumnsInput && allColumnsInput.checked),
+        }),
       })
         .then(function (r) {
           if (!r.ok) return r.json().then(function (d) { throw new Error(d.error || 'Export failed'); });

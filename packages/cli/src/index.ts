@@ -16,6 +16,7 @@ program
   .argument('<files...>', 'PDF files to parse')
   .option('-f, --format <format>', 'Output format: csv, json, excel', 'csv')
   .option('-o, --output <path>', 'Output file path')
+  .option('--all-columns', 'CSV/Excel: export every optional column, even when empty')
   .option('-b, --bank <name>', 'Bank name (skip auto-detection)')
   .option('-p, --password <password>', 'PDF password (for protected files)')
   .action(async (files, options) => {
@@ -23,6 +24,7 @@ program
       files,
       format: options.format,
       output: options.output,
+      allColumns: options.allColumns,
       bank: options.bank,
       password: options.password,
     });

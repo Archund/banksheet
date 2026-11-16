@@ -34,6 +34,8 @@ export interface ExportOptions {
   output?: string;
   currency?: string;
   dateFormat?: string;
+  /** CSV/Excel: export every optional column, even when empty, so the layout never changes. */
+  allColumns?: boolean;
 }
 
 /** Result of parsing a statement */

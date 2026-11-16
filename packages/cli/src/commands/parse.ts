@@ -14,6 +14,7 @@ export interface ParseArgs {
   files: string[];
   format: ExportOptions['format'];
   output?: string;
+  allColumns?: boolean;
   bank?: string;
   password?: string;
 }
@@ -36,6 +37,7 @@ export async function parse(args: ParseArgs): Promise<void> {
     process.exit(1);
   }
 
+  const columnOptions = { allColumns: args.allColumns };
   let output: string | Buffer;
 
   switch (args.format) {
@@ -43,11 +45,11 @@ export async function parse(args: ParseArgs): Promise<void> {
       output = exportJSON(allTransactions);
       break;
     case 'excel':
-      output = await exportExcel(allTransactions);
+      output = await exportExcel(allTransactions, columnOptions);
       break;
     case 'csv':
     default:
-      output = exportCSV(allTransactions);
+      output = exportCSV(allTransactions, columnOptions);
       break;
   }
 

@@ -6,7 +6,12 @@ const router = Router();
 
 router.post('/export', async (req, res) => {
   try {
-    const { transactions, format } = req.body as { transactions: Transaction[]; format: string };
+    const { transactions, format, allColumns } = req.body as {
+      transactions: Transaction[];
+      format: string;
+      allColumns?: boolean;
+    };
+    const columnOptions = { allColumns: allColumns === true };
 
     if (!transactions || !Array.isArray(transactions) || transactions.length === 0) {
       res.status(400).json({ error: 'Missing or empty transactions array.' });
@@ -20,7 +25,7 @@ router.post('/export', async (req, res) => {
 
     switch (format) {
       case 'csv': {
-        const csv = exportCSV(transactions);
+        const csv = exportCSV(transactions, columnOptions);
         res.setHeader('Content-Type', 'text/csv');
         res.setHeader('Content-Disposition', 'attachment; filename="transactions.csv"');
         res.send(csv);
@@ -34,7 +39,7 @@ router.post('/export', async (req, res) => {
         break;
       }
       case 'excel': {
-        const buffer = await exportExcel(transactions);
+        const buffer = await exportExcel(transactions, columnOptions);
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         res.setHeader('Content-Disposition', 'attachment; filename="transactions.xlsx"');
         res.send(buffer);

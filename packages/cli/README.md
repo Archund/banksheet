@@ -45,6 +45,7 @@ banksheet list
 |------|-------------|
 | `-f, --format <format>` | Output format: `csv`, `json`, `excel` (default: `csv`) |
 | `-o, --output <path>` | Output file path |
+| `--all-columns` | CSV/Excel: export every optional column, even when empty (stable layout for importers) |
 | `-b, --bank <name>` | Bank name (skip auto-detection) |
 | `-p, --password <password>` | PDF password for protected files |
 
