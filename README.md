@@ -164,7 +164,7 @@ Create a `README.md` in your plugin folder documenting:
 - Pieces shared by several plugins of the same bank go next to them (e.g. `plugins/MX/openbank-common.ts`: account names, card payment IDs); everything else stays in the plugin folder.
 - Use `pdf-parse` or `pdfjs-dist` to inspect the raw extracted text — it often looks very different from the visual PDF.
 - Negative amounts = expenses, positive = income.
-- Parsers may fill the optional importer fields `account`, `counterAccount`, `payee`, `externalId`, `bookingDate`, `exchangeRate` and `notes`; the JSON export includes them. For a transfer between own accounts, give both sides the same `externalId` and set `counterAccount`.
+- Parsers may fill the optional importer fields `account`, `counterAccount`, `payee`, `externalId`, `bookingDate`, `exchangeRate` and `notes`; CSV/Excel exports add a column for each one only when a parser uses it (CSV headers in `snake_case`, e.g. `external_id`). For a transfer between own accounts, give both sides the same `externalId` and set `counterAccount`.
 
 ## Project Structure
 
