@@ -36,11 +36,25 @@
 installment sum equals "Cargos compras a meses (capital)", on every sample statement.
 
 ## Known limitations
-- **Not tested: anything with interest.** No sample statement had interest charged, so:
+What the parser does not account for, or could not be checked against a sample:
+
+- **Anything with interest.** No sample statement had interest charged, so:
   - `COMPRAS Y CARGOS DIFERIDOS A MESES CON INTERESES` (installments with interest) are skipped, not parsed;
   - months where interest, fees or IVA are charged are untested. In the samples these only appear (as
     `$ 0.00`) in summary boxes, not as movement rows; if a statement prints them as regular movements they
     are parsed like any other row, otherwise they are missing from the output.
-- The card payment link assumes the payment is made from the Openbank debit account and that both statements
-  print it on the same day. A payment from another bank labeled the same way would be linked to the debit
-  account too (fix `counterAccount` in the importer if so).
+- **Card payment link.** It assumes the payment is made from the Openbank debit account and that both
+  statements print it on the same day. This was confirmed for a weekday payment; a weekend payment (operation
+  date and posting date differ) is unverified. A payment from another bank labeled the same way would be
+  linked to the debit account too (fix `counterAccount` in the importer if so).
+- **Installments are monthly charges, not purchases.** The purchase itself is never exported as one row; each
+  month adds the required payment, dated at the cut-off date. The total number of installments is derived
+  (`original / payment`, rounded). Early settlement or a cancelled plan is untested.
+- **Foreign purchases:** the statement prints only the exchange rate, not the original amount or currency
+  (`por -`), so neither is exported.
+- **Additional cards.** The "Tarjeta adicional" tables were empty in the samples; their rows would be parsed
+  but not told apart from the main card.
+- **Not parsed:** `INFORMACIÓN DE OTRAS LÍNEAS DE CRÉDITO`, `CARGOS NO RECONOCIDOS`, the payment
+  distribution and summary boxes.
+- **Never seen in a sample:** cash advances, balance transfers, late-payment or annual fees, a credit
+  balance in favor.
