@@ -54,8 +54,23 @@ On 12 monthly statements (Nov 2025 – Oct 2026): deposits and withdrawals match
 and every entry of the SPEI tables is paired with a movement.
 
 ## Known limitations
-- Developed from decoded, redacted text of the statements; the encoded path is covered by tests that
-  re-encode that text, not by PDFs in the test suite.
-- CoDi tables were empty in the samples; they are read like the SPEI tables but are untested.
-- Commissions, interest and cash withdrawals did not occur in the samples.
-- Statements with more than one account are untested (the balance chain restarts at each new account number).
+What the parser does not account for, or could not be checked against a sample:
+
+- **No PDF in the test suite.** The plugin was developed from decoded, redacted text of the statements. The
+  encoded path is covered by tests that re-encode that text; a real PDF run is a manual check.
+- **Links to other accounts.** Transfers to/from other banks are not linked to the matching row of another
+  bank's statement, and `PAGO DE TARJETA` rows are not linked to a credit card account (no
+  `counterAccount`, no shared `externalId`).
+- **Transfer pairing limits.** A transfer dated more than 5 days from its movement stays unpaired (the
+  movement is still exported, without `payee`). Bank and counterparty name cannot always be separated, so
+  `payee` may hold only the first word of a multi-word bank name.
+- **Garbled concepts** (`Reembo so`) are exported as printed; only the SPEI note may carry the full text.
+- **CoDi tables** were empty in the samples; they are read like the SPEI tables but are untested.
+- **Never seen in a sample:** commissions, interest, tax withheld, cash withdrawals or deposits, cheques,
+  debit card purchases, reversed movements.
+- **Statements with more than one account** are untested (the balance chain restarts at each new account
+  number, without an opening balance for the later ones).
+- **Other products** (credit cards, investments, foreign-currency accounts) are not supported; the currency
+  is always `MXN`.
+- **Direction without balances.** If `Saldo Inicial` is missing or the chain breaks, direction falls back
+  to keywords; anything else is taken as a deposit.
