@@ -26,23 +26,33 @@ function sample({ period = 'del 01 al 29 feb 2024', cajitas = '$2,010.50', inter
     `Periodo: ${period}`,
     'Saldo inicial $0.00',
     'Depósitos +$3,000.00',
-    'Gastos -$250.00',
+    'Gastos -$350.00',
     'Comisiones cobradas por Nu $0.00',
     `Dinero generado este mes ${interest}`,
-    'Saldo al generar este estado de cuenta $2,760.50',
+    'Saldo al generar este estado de cuenta $2,660.50',
     'Cómo está organizado tu dinero',
     'En su Cuenta',
-    '$750.00',
-    'En Cajitas',
+    '$650.00',
+    'Total Cajitas',
     cajitas,
+    'Disponible 24/7 $10.50',
+    'Congelado $2,000.00',
     'Nu México Financiera, S.A. de C.V., S.F.P. Calle Ejemplo #1, Colonia Ejemplo,',
     'C.P. 00000, Ciudad Ejemplo, México. Teléfono: 800 000 0000',
     '1 de 4',
     '--- PAGE BREAK ---',
     'Detalle de movimientos en tu cuenta',
     'FECHA DEL 01 AL 29 FEB 2024 (29 DÍAS) MONTO EN PESOS MEXICANOS',
-    '20 FEB Retiro de Cajita: Vacaciones +$500.00',
-    '15 FEB Tienda Ejemplo -$250.00',
+    '25 FEB 2024 Pago a tu tarjeta de crédito Nu -$100.00',
+    '20 FEB',
+    '2024 Retiro de Cajita: Vacaciones +$500.00',
+    '16 FEB 2024 CUENTA DEMO Transferencia -$0.00',
+    'Transferencia SPEI, Hora: 18:13:12, Enviado a BANCODOS. Al cliente CUENTA',
+    'DEMO (Dato no verificado por esta institución), por',
+    'concepto Transferencia. A la cuenta 000000000000005678 clabe,',
+    'Clave de rastreo NU00000000000000000000000001, Clave de',
+    'referencia 160224',
+    '15 FEB 2024 TIENDA EJEMPLO Compra -$250.00',
     '14 FEB Depósito en Cajita: Vacaciones -$1,500.00',
     '14 FEB Depósito en Cajita: Vacaciones -$1,000.00',
     '13 FEB FULANO Deposito Demo +$3,000.00',
@@ -60,7 +70,10 @@ function sample({ period = 'del 01 al 29 feb 2024', cajitas = '$2,010.50', inter
     ...footer(3),
     'Detalle de movimientos de tus cajitas',
     'FECHA DEL 01 AL 29 FEB 2024 (29 DÍAS) MONTO EN PESOS MEXICANOS',
-    '20 FEB Retiro de Cajita: Vacaciones -$500.00',
+    '28 FEB 2024 Descongelamos saldo de tu Cajita: Vacaciones +$2,000.00',
+    '21 FEB 2024 Congelaste saldo hasta el 28 FEB 2024 en tu Cajita: Mi Cajita',
+    'Larga -$2,000.00',
+    '20 FEB 2024 Retiro de Cajita: Vacaciones -$500.00',
     '14 FEB Depósito en Cajita: Vacaciones +$1,500.00',
     '14 FEB Depósito en Cajita: Vacaciones +$1,000.00',
     ...footer(4),
@@ -73,12 +86,21 @@ function sample({ period = 'del 01 al 29 feb 2024', cajitas = '$2,010.50', inter
 }
 
 const SAMPLE = sample();
+const ISSUER_2026 = 'Nubank, S.A., Institución de Banca Múltiple Calle Ejemplo #1, Colonia Ejemplo,';
 const sum = (xs: number[]) => Math.round(xs.reduce((a, b) => a + b, 0) * 100) / 100;
 
 describe('nuCuentaParser', () => {
   describe('detect', () => {
     it('detects a Cuenta Nu statement', () => {
       expect(nuCuentaParser.detect(SAMPLE)).toBe(true);
+    });
+
+    it('detects the statements issued after Nu became a bank, ahead of the Brazilian Nubank parser', () => {
+      const text = SAMPLE.replace(/^Nu México Financiera.*$/gm, ISSUER_2026);
+      expect(text).not.toContain('Nu México Financiera');
+      expect(nuCuentaParser.detect(text)).toBe(true);
+      expect(parseStatement(text, plugins).bank).toBe('Nu Cuenta');
+      expect(nuCuentaParser.parse(text)).toHaveLength(nuCuentaParser.parse(SAMPLE).length);
     });
 
     it('requires both markers', () => {
@@ -101,15 +123,15 @@ describe('nuCuentaParser', () => {
     const cajitas = txns.filter(t => t.account === NU_ACCOUNTS.cajitas);
 
     it('parses both tables plus the interest row, and nothing outside the tables', () => {
-      expect(cuenta).toHaveLength(6);
+      expect(cuenta).toHaveLength(8);
       expect(cajitas).toHaveLength(4);
       expect(txns.some(t => t.description.includes('No es un movimiento'))).toBe(false);
     });
 
     it('matches the statement totals', () => {
       // deposits - expenses + interest = closing balance (opening balance 0)
-      expect(sum(txns.map(t => t.amount))).toBe(2760.5);
-      expect(sum(cuenta.map(t => t.amount))).toBe(750);
+      expect(sum(txns.map(t => t.amount))).toBe(2660.5);
+      expect(sum(cuenta.map(t => t.amount))).toBe(650);
       expect(sum(cajitas.map(t => t.amount))).toBe(2010.5);
     });
 
@@ -120,12 +142,14 @@ describe('nuCuentaParser', () => {
         '2024-02-14',
         '2024-02-14',
         '2024-02-15',
+        '2024-02-16',
         '2024-02-20',
+        '2024-02-25',
       ]);
     });
 
     it('uses the printed sign', () => {
-      expect(cuenta.map(t => t.amount)).toEqual([-0, 3000, -1000, -1500, -250, 500]);
+      expect(cuenta.map(t => t.amount)).toEqual([-0, 3000, -1000, -1500, -250, -0, 500, -100]);
       expect(cuenta[1].type).toBe('credit');
       expect(cuenta[4].type).toBe('debit');
     });
@@ -153,6 +177,7 @@ describe('nuCuentaParser', () => {
 
     it('pairs Cajita movements of both tables as one transfer', () => {
       const out = cuenta.filter(t => t.counterAccount === NU_ACCOUNTS.cajitas);
+      expect(cuenta.filter(t => t.counterAccount).length).toBe(4); // 3 Cajita moves + the card payment
       const inn = cajitas.filter(t => t.counterAccount === NU_ACCOUNTS.cuenta);
       expect(out).toHaveLength(3);
       expect(inn).toHaveLength(3);
@@ -169,10 +194,29 @@ describe('nuCuentaParser', () => {
       }
     });
 
-    it('leaves other movements without a counter account', () => {
-      expect(cuenta[4]).toMatchObject({ description: 'Tienda Ejemplo', amount: -250 });
+    it('takes the merchant of a card purchase as payee', () => {
+      expect(cuenta[4]).toMatchObject({ description: 'TIENDA EJEMPLO Compra', amount: -250, payee: 'TIENDA EJEMPLO' });
       expect(cuenta[4].counterAccount).toBeUndefined();
-      expect(cuenta[4].payee).toBeUndefined();
+    });
+
+    it('parses a transfer sent to another bank', () => {
+      expect(cuenta[5]).toMatchObject({ description: 'CUENTA DEMO Transferencia', payee: 'BANCODOS 5678' });
+      expect(cuenta[5].notes).toContain('Enviado a BANCODOS');
+    });
+
+    it('reads a year that wraps to the next line', () => {
+      expect(cuenta[6]).toMatchObject({ date: '2024-02-20', description: 'Retiro de Cajita: Vacaciones', amount: 500 });
+    });
+
+    it('marks a payment to the Nu credit card as a transfer to it', () => {
+      expect(cuenta[7]).toMatchObject({
+        description: 'Pago a tu tarjeta de crédito Nu',
+        counterAccount: NU_ACCOUNTS.credito,
+      });
+    });
+
+    it('skips freezing and unfreezing of Cajitas', () => {
+      expect(txns.some(t => /Congelaste|Descongelamos|Larga/.test(t.description))).toBe(false);
     });
 
     it('adds the net interest of the summary on the last day of the period', () => {
@@ -187,9 +231,9 @@ describe('nuCuentaParser', () => {
       });
     });
 
-    it('credits the interest to the account when the Cajitas are empty', () => {
+    it('credits the interest to the Cajitas even when they end the period empty', () => {
       const interest = nuCuentaParser.parse(sample({ cajitas: '$0.00' })).at(-1)!;
-      expect(interest.account).toBe(NU_ACCOUNTS.cuenta);
+      expect(interest.account).toBe(NU_ACCOUNTS.cajitas);
     });
 
     it('adds no interest row when nothing was earned', () => {
@@ -207,13 +251,13 @@ describe('nuCuentaParser', () => {
     });
 
     it('gives unpaired rows unique externalIds', () => {
-      const ids = txns.filter(t => !t.counterAccount).map(t => t.externalId);
+      const ids = txns.filter(t => t.counterAccount !== NU_ACCOUNTS.cajitas && t.counterAccount !== NU_ACCOUNTS.cuenta).map(t => t.externalId);
       expect(new Set(ids).size).toBe(ids.length);
     });
 
     it('dates December rows of a period that ends in January', () => {
-      const text = sample({ period: 'del 15 dic al 14 ene 2025' }).replace(/(\d{2}) FEB (Tienda)/, '20 DIC $2');
-      const row = nuCuentaParser.parse(text).find(t => t.description === 'Tienda Ejemplo')!;
+      const text = sample({ period: 'del 15 dic al 14 ene 2025' }).replace('15 FEB 2024 TIENDA', '20 DIC TIENDA');
+      const row = nuCuentaParser.parse(text).find(t => t.description === 'TIENDA EJEMPLO Compra')!;
       expect(row.date).toBe('2024-12-20');
     });
 

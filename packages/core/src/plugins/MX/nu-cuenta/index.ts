@@ -9,34 +9,45 @@ const PERIOD_RE = /Periodo:\s*del\s+(\d{1,2})(?:\s+(?:de\s+)?([a-zé]{3})[a-z]*\
 const ACCOUNT_SECTION_RE = /^Detalle de movimientos en tu cuenta/i;
 const CAJITAS_SECTION_RE = /^Detalle de movimientos de tus cajitas/i;
 const SECTION_END_RE = /^(Con estos movimientos|DINERO GENERADO|CONTACTO\b|Número de serie)/i;
-// A movement: "14 FEB <title> +$15,000.00". The sign is printed; rows are listed newest first.
-const ROW_START_RE = /^(\d{1,2})\s+(ENE|FEB|MAR|ABR|MAY|JUN|JUL|AGO|SEP|OCT|NOV|DIC)\b\.?\s*(.*)$/i;
+// A movement: "14 FEB <title> +$15,000.00" or, since mid-2024, "14 JUN 2024 <title> -$2,000.00"
+// (the year can wrap to the next line). The sign is printed; rows are listed newest first.
+const ROW_START_RE = /^(\d{1,2})\s+(ENE|FEB|MAR|ABR|MAY|JUN|JUL|AGO|SEP|OCT|NOV|DIC)\b\.?(?:\s+(\d{4})\b)?\s*(.*)$/i;
+const LEADING_YEAR_RE = /^(\d{4})\b\s*/;
 const AMOUNT_TAIL_RE = /(?:^|\s)([+-])\s*\$\s*([\d,]+\.\d{2})\s*$/;
 const MAX_TITLE_LINES = 4;
 // Page footer: customer name, "Cuenta Nu: <number>", the bank's address, "2 de 6"
 const FOOTER_ACCOUNT_RE = /^Cuenta Nu:/i;
-const NOT_DETAIL_RE = /^(---|FECHA DEL\b|Nu México Financiera|C\.P\.|\d+ de \d+$)/i;
+const NOT_DETAIL_RE = /^(---|FECHA DEL\b|Nu México Financiera|Nubank, S\.A\.|C\.P\.|\d+ de \d+$)/i;
 
 // SPEI detail printed under a movement:
 //   "Depósito SPEI, Hora: 10:57:19, Recibido de BANCO. Del cliente ... De la cuenta 0123... clabe, Clave de rastreo ..."
 const SPEI_BANK_RE = /(?:Recibido de|Enviado a)\s+([^.,]+)[.,]/i;
 const SPEI_ACCOUNT_RE = /(?:De|A) la cuenta\s+(\d{4,})/i;
 const CAJITA_RE = /cajita/i;
+// Freezing / unfreezing moves money between "Disponible" and "Congelado" inside the Cajitas:
+// the Cajitas total does not change, so these rows are not transactions.
+const FREEZE_RE = /^(Congelaste saldo|Descongelamos saldo)\b/i;
+// Debit card rows: "<MERCHANT> Compra" / "<MERCHANT> Devolución"
+const CARD_ROW_RE = /^(.+?)\s+(?:Compra|Devoluci[oó]n)$/i;
+const CARD_PAYMENT_RE = /^Pago a tu tarjeta de cr[eé]dito Nu$/i;
+// Issuer line of the page footer: "Nu México Financiera, S.A. de C.V., S.F.P." until 2025,
+// "Nubank, S.A., Institución de Banca Múltiple" since Nu became a bank
+const ISSUER_RE = /Nu México Financiera|Nubank, S\.A\., Instituci[oó]n de Banca M[uú]ltiple/i;
 
 // Summary: money earned in the period, net of tax ("Dinero generado este mes $160.91")
 const INTEREST_RE = /^Dinero generado este mes\s+\$\s*([\d,]+\.\d{2})\s*$/im;
-const CAJITAS_BALANCE_RE = /^En Cajitas\s*\n\s*\$\s*([\d,]+\.\d{2})/im;
 
 /** Stable account names used in the `account` / `counterAccount` fields. */
 export const NU_ACCOUNTS = {
   cuenta: 'Nu Cuenta',
   cajitas: 'Nu Cajitas',
+  credito: 'Nu Tarjeta de Crédito',
 } as const;
 
 /** Name used as payee for rows the bank itself originates (interest). */
 const NU_PAYEE = 'Nu';
 
-type SectionKey = keyof typeof NU_ACCOUNTS;
+type SectionKey = 'cuenta' | 'cajitas';
 
 interface Period {
   start: string; // ISO
@@ -58,7 +69,7 @@ export const nuCuentaParser: BankParser = {
   country: 'MX',
 
   detect(text: string): boolean {
-    return /Nu México Financiera/i.test(text) && /Cuenta Nu/i.test(text);
+    return ISSUER_RE.test(text) && /Cuenta Nu/i.test(text);
   },
 
   /**
@@ -66,16 +77,18 @@ export const nuCuentaParser: BankParser = {
    * ("Detalle de movimientos en tu cuenta") and the Cajitas ("Detalle de
    * movimientos de tus cajitas"). A month without movements has neither.
    *
-   * - Rows print day and month ("14 FEB") and a signed amount; the year comes
-   *   from the statement period. Rows are listed newest first and are returned
-   *   in chronological order.
+   * - Rows print day and month ("14 FEB", later "14 JUN 2024") and a signed
+   *   amount; a missing year comes from the statement period. Rows are listed
+   *   newest first and are returned in chronological order.
+   * - Freezing and unfreezing a Cajita ("Congelaste saldo", "Descongelamos
+   *   saldo") does not change the Cajitas total and is skipped.
    * - Money moved into or out of a Cajita appears in both tables with opposite
    *   signs: both sides get the same `externalId` and each other's account as
    *   `counterAccount`, so an importer sees one transfer.
    * - The SPEI detail under a movement goes to `notes`, and the counterparty to
    *   `payee` as "<BANK> <last 4 digits>".
    * - Interest is not listed as a movement: the net "Dinero generado este mes"
-   *   of the summary becomes one row on the last day of the period.
+   *   of the summary becomes one Cajitas row on the last day of the period.
    */
   parse(text: string): Transaction[] {
     const period = findPeriod(text);
@@ -120,11 +133,18 @@ function collectRows(text: string, period: Period): Row[] {
   const sections: Record<SectionKey, Row[]> = { cuenta: [], cajitas: [] };
   let section: SectionKey | null = null;
   // Row whose title is still wrapping (no amount yet), then the row collecting detail lines
-  let pending: { date: string; parts: string[]; raw: string[] } | null = null;
+  let pending: { day: string; month: string; year?: string; parts: string[]; raw: string[] } | null = null;
   let current: Row | null = null;
 
   const feedTitle = (fragment: string): void => {
     if (!pending || !section) return;
+    if (!pending.year && pending.parts.length === 0) {
+      const year = fragment.match(LEADING_YEAR_RE);
+      if (year) {
+        pending.year = year[1];
+        fragment = fragment.slice(year[0].length);
+      }
+    }
     const amount = fragment.match(AMOUNT_TAIL_RE);
     const head = (amount ? fragment.slice(0, amount.index) : fragment).trim();
     if (head) pending.parts.push(head);
@@ -133,10 +153,17 @@ function collectRows(text: string, period: Period): Row[] {
       return;
     }
     const value = parseMXAmount(amount[2]);
+    const title = pending.parts.join(' ').replace(/\s+/g, ' ').trim();
+    if (FREEZE_RE.test(title)) {
+      pending = null;
+      current = null;
+      return;
+    }
+    const day = pending.day.padStart(2, '0');
     current = {
       section,
-      date: pending.date,
-      title: pending.parts.join(' ').replace(/\s+/g, ' ').trim(),
+      date: pending.year ? `${pending.year}-${pending.month}-${day}` : resolveDate(day, pending.month, period),
+      title,
       detail: [],
       amount: amount[1] === '-' ? -value : value,
       raw: pending.raw,
@@ -185,8 +212,8 @@ function collectRows(text: string, period: Period): Row[] {
     const month = start ? monthNumber(start[2]) : undefined;
     if (start && month) {
       current = null;
-      pending = { date: resolveDate(start[1], month, period), parts: [], raw: [line] };
-      feedTitle(start[3]);
+      pending = { day: start[1], month, year: start[3], parts: [], raw: [line] };
+      feedTitle(start[4]);
     } else if (pending) {
       pending.raw.push(line);
       feedTitle(line);
@@ -262,6 +289,11 @@ function buildTransactions(rows: Row[]): Transaction[] {
       const account = detail.match(SPEI_ACCOUNT_RE);
       if (bank && account) tx.payee = `${bank[1].trim()} ${account[1].slice(-4)}`;
     }
+    const cardRow = row.section === 'cuenta' && row.partner === undefined ? row.title.match(CARD_ROW_RE) : null;
+    if (cardRow && !tx.payee) tx.payee = cardRow[1];
+    if (row.section === 'cuenta' && row.amount < 0 && CARD_PAYMENT_RE.test(row.title)) {
+      tx.counterAccount = NU_ACCOUNTS.credito;
+    }
     return tx;
   });
 }
@@ -272,10 +304,6 @@ function buildInterest(text: string, period: Period): Transaction | undefined {
   const amount = m ? parseMXAmount(m[1]) : 0;
   if (!(amount > 0)) return undefined;
 
-  // The statement does not say where the interest was credited: it is where the money sits
-  const cajitas = text.match(CAJITAS_BALANCE_RE);
-  const inCajitas = cajitas ? parseMXAmount(cajitas[1]) > 0 : false;
-
   return {
     date: period.end,
     description: 'Dinero generado este mes',
@@ -283,7 +311,9 @@ function buildInterest(text: string, period: Period): Transaction | undefined {
     currency: 'MXN',
     type: 'credit',
     raw: m![0],
-    account: inCajitas ? NU_ACCOUNTS.cajitas : NU_ACCOUNTS.cuenta,
+    // Only the Cajitas earn interest: across consecutive statements their balance
+    // grows by exactly this amount, while money left in the account earns nothing
+    account: NU_ACCOUNTS.cajitas,
     payee: NU_PAYEE,
     category: 'Rendimientos',
     externalId: `nu-interes:${compactDate(period.end)}`,
