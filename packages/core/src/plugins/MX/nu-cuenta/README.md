@@ -55,6 +55,19 @@ On 33 consecutive monthly statements (Feb 2024 – Oct 2026):
 - every Cajita movement is paired with its mirror in the other table.
 
 ## Known limitations
-- Not seen in the samples: commissions, tax withheld on interest (always `$0.00`), cash withdrawals.
-- A movement detail that continues on the next page loses the continuation lines (only `notes` is affected).
-- Only the Cuenta Nu statement is supported, not the Nu credit card statement.
+What the parser does not account for, or could not be checked against a sample:
+
+- **Interest is one row per month.** Nu credits it daily but only prints the monthly total, so the row is
+  dated on the last day of the period. Tax withheld (`ISR`) was always `$0.00`; the net amount is used.
+- **Cajitas are one account.** Individual Cajitas are not separate accounts, and frozen vs. available money
+  is not tracked (freeze / unfreeze rows are skipped).
+- **Links to other accounts.** Transfers to/from other banks are not linked to the matching row of another
+  bank's statement. A payment to the Nu credit card gets a `counterAccount` but no shared `externalId`,
+  because the credit card statement is not supported.
+- **Movement detail across a page break:** the continuation lines are lost (only `notes` and, if the bank or
+  account falls in the lost part, `payee` are affected; the movement itself is kept).
+- **Card rows** are recognized by the `Compra` / `Devolución` suffix; a foreign-currency purchase was never
+  seen, and no exchange rate is exported.
+- **Never seen in a sample:** commissions, cash deposits or withdrawals, reversed movements, a period that is
+  not a calendar month.
+- **Not supported:** the Nu credit card statement. The currency is always `MXN`.
