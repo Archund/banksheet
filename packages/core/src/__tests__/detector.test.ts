@@ -17,7 +17,7 @@ describe('plugin registry', () => {
 
   it('listParsers returns all registered parsers', () => {
     const list = listParsers();
-    expect(list).toHaveLength(10);
+    expect(list).toHaveLength(11);
     expect(list).toContainEqual({ name: 'Bradesco Cartão', country: 'BR' });
     expect(list).toContainEqual({ name: 'C6 Cartão', country: 'BR' });
     expect(list).toContainEqual({ name: 'Inter Cartão', country: 'BR' });
@@ -28,6 +28,7 @@ describe('plugin registry', () => {
     expect(list).toContainEqual({ name: 'Chase Credit', country: 'US' });
     expect(list).toContainEqual({ name: 'Openbank Débito', country: 'MX' });
     expect(list).toContainEqual({ name: 'Openbank Crédito', country: 'MX' });
+    expect(list).toContainEqual({ name: 'HSBC Débito', country: 'MX' });
   });
 
   it('getParserByName finds Bradesco Cartão', () => {
@@ -172,6 +173,15 @@ describe('detectBank', () => {
 
   it('does not detect Openbank from the bank name alone', () => {
     expect(detectBank('Transferencia recibida de Openbank', plugins)).toBeUndefined();
+  });
+
+  it('detects HSBC Mexico by bank name + movements header', () => {
+    const result = detectBank('HSBC México S.A.\nDETALLE MOVIMIENTOS PRODUCTO BASICO GENERAL No. 0000001234', plugins);
+    expect(result?.name).toBe('HSBC Débito');
+  });
+
+  it('does not detect HSBC from the bank name alone', () => {
+    expect(detectBank('Transferencia recibida de HSBC', plugins)).toBeUndefined();
   });
 
   it('returns undefined for unknown text', () => {
