@@ -191,7 +191,7 @@ banksheet/
 │   │           │   └── pc-financial-mastercard/
 │   │           ├── MX/         # Mexican bank plugins
 │   │           │   ├── utils.ts
-│   │           │   └── nu-cuenta/
+│   │           │   └── nu-debito/
 │   │           └── US/         # American bank plugins
 │   │               ├── utils.ts
 │   │               └── chase-credit/

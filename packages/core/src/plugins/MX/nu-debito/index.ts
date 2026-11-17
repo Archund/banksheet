@@ -39,7 +39,7 @@ const INTEREST_RE = /^Dinero generado este mes\s+\$\s*([\d,]+\.\d{2})\s*$/im;
 
 /** Stable account names used in the `account` / `counterAccount` fields. */
 export const NU_ACCOUNTS = {
-  cuenta: 'Nu Cuenta',
+  cuenta: 'Nu Débito',
   cajitas: 'Nu Cajitas',
   credito: 'Nu Tarjeta de Crédito',
 } as const;
@@ -64,8 +64,8 @@ interface Row {
   partner?: number; // index of the matching row in the other section (cuenta <-> cajitas)
 }
 
-export const nuCuentaParser: BankParser = {
-  name: 'Nu Cuenta',
+export const nuDebitoParser: BankParser = {
+  name: 'Nu Débito',
   country: 'MX',
 
   detect(text: string): boolean {
@@ -279,7 +279,7 @@ function buildTransactions(rows: Row[]): Transaction[] {
       tx.counterAccount = NU_ACCOUNTS[rows[row.partner].section];
       tx.externalId = `nu-xfer:${compactDate(row.date)}:${Math.abs(cents)}:${transferN.get(pairKey)}`;
     } else {
-      tx.externalId = `nu-${row.section}:${compactDate(row.date)}:${cents}:${nextRowN(`${row.section}|${row.date}|${cents}`)}`;
+      tx.externalId = `nu-debito:${row.section}:${compactDate(row.date)}:${cents}:${nextRowN(`${row.section}|${row.date}|${cents}`)}`;
     }
 
     if (row.detail.length) {

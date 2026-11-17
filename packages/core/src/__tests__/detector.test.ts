@@ -26,7 +26,7 @@ describe('plugin registry', () => {
     expect(list).toContainEqual({ name: 'Porto Seguro Cartão', country: 'BR' });
     expect(list).toContainEqual({ name: 'PC Financial Mastercard', country: 'CA' });
     expect(list).toContainEqual({ name: 'Chase Credit', country: 'US' });
-    expect(list).toContainEqual({ name: 'Nu Cuenta', country: 'MX' });
+    expect(list).toContainEqual({ name: 'Nu Débito', country: 'MX' });
   });
 
   it('getParserByName finds Bradesco Cartão', () => {
@@ -149,7 +149,7 @@ describe('detectBank', () => {
 
   it('detects Nu Mexico by issuer + account label', () => {
     const result = detectBank('Cuenta Nu: 00000000001\nNu México Financiera, S.A. de C.V., S.F.P.', plugins);
-    expect(result?.name).toBe('Nu Cuenta');
+    expect(result?.name).toBe('Nu Débito');
   });
 
   it('does not detect Nu Mexico from the account label alone', () => {

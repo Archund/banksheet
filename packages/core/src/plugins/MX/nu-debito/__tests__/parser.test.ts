@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { NU_ACCOUNTS, nuCuentaParser } from '../index';
+import { NU_ACCOUNTS, nuDebitoParser } from '../index';
 import { parseStatement } from '../../../../parser';
 import { plugins } from '../../../index';
 
@@ -89,36 +89,36 @@ const SAMPLE = sample();
 const ISSUER_2026 = 'Nubank, S.A., Institución de Banca Múltiple Calle Ejemplo #1, Colonia Ejemplo,';
 const sum = (xs: number[]) => Math.round(xs.reduce((a, b) => a + b, 0) * 100) / 100;
 
-describe('nuCuentaParser', () => {
+describe('nuDebitoParser', () => {
   describe('detect', () => {
     it('detects a Cuenta Nu statement', () => {
-      expect(nuCuentaParser.detect(SAMPLE)).toBe(true);
+      expect(nuDebitoParser.detect(SAMPLE)).toBe(true);
     });
 
     it('detects the statements issued after Nu became a bank, ahead of the Brazilian Nubank parser', () => {
       const text = SAMPLE.replace(/^Nu México Financiera.*$/gm, ISSUER_2026);
       expect(text).not.toContain('Nu México Financiera');
-      expect(nuCuentaParser.detect(text)).toBe(true);
-      expect(parseStatement(text, plugins).bank).toBe('Nu Cuenta');
-      expect(nuCuentaParser.parse(text)).toHaveLength(nuCuentaParser.parse(SAMPLE).length);
+      expect(nuDebitoParser.detect(text)).toBe(true);
+      expect(parseStatement(text, plugins).bank).toBe('Nu Débito');
+      expect(nuDebitoParser.parse(text)).toHaveLength(nuDebitoParser.parse(SAMPLE).length);
     });
 
     it('requires both markers', () => {
-      expect(nuCuentaParser.detect('Nu México Financiera, S.A. de C.V.')).toBe(false);
-      expect(nuCuentaParser.detect('Transferencia a Cuenta Nu')).toBe(false);
+      expect(nuDebitoParser.detect('Nu México Financiera, S.A. de C.V.')).toBe(false);
+      expect(nuDebitoParser.detect('Transferencia a Cuenta Nu')).toBe(false);
     });
 
     it('is the parser picked for the statement by the detector', () => {
-      expect(parseStatement(SAMPLE, plugins).bank).toBe('Nu Cuenta');
+      expect(parseStatement(SAMPLE, plugins).bank).toBe('Nu Débito');
     });
 
     it('is still picked when a transfer names another bank', () => {
-      expect(parseStatement(SAMPLE.replace('BANCOUNO', 'NUBANK'), plugins).bank).toBe('Nu Cuenta');
+      expect(parseStatement(SAMPLE.replace('BANCOUNO', 'NUBANK'), plugins).bank).toBe('Nu Débito');
     });
   });
 
   describe('parse', () => {
-    const txns = nuCuentaParser.parse(SAMPLE);
+    const txns = nuDebitoParser.parse(SAMPLE);
     const cuenta = txns.filter(t => t.account === NU_ACCOUNTS.cuenta);
     const cajitas = txns.filter(t => t.account === NU_ACCOUNTS.cajitas);
 
@@ -164,7 +164,7 @@ describe('nuCuentaParser', () => {
         amount: 3000,
         currency: 'MXN',
         payee: 'BANCOUNO 1234',
-        externalId: 'nu-cuenta:20240213:300000:1',
+        externalId: 'nu-debito:cuenta:20240213:300000:1',
         notes:
           'Depósito SPEI, Hora: 10:57:19, Recibido de BANCOUNO. Del cliente FULANO DE TAL (Dato no verificado por esta institución), por concepto Deposito Demo. De la cuenta 000000000000001234 clabe, Clave de rastreo BCO000001, Clave de referencia 1302241',
       });
@@ -232,12 +232,12 @@ describe('nuCuentaParser', () => {
     });
 
     it('credits the interest to the Cajitas even when they end the period empty', () => {
-      const interest = nuCuentaParser.parse(sample({ cajitas: '$0.00' })).at(-1)!;
+      const interest = nuDebitoParser.parse(sample({ cajitas: '$0.00' })).at(-1)!;
       expect(interest.account).toBe(NU_ACCOUNTS.cajitas);
     });
 
     it('adds no interest row when nothing was earned', () => {
-      const none = nuCuentaParser.parse(sample({ interest: '$0.00' }));
+      const none = nuDebitoParser.parse(sample({ interest: '$0.00' }));
       expect(none.some(t => t.category === 'Rendimientos')).toBe(false);
     });
 
@@ -245,7 +245,7 @@ describe('nuCuentaParser', () => {
       const text = SAMPLE.split('\n')
         .filter(l => !/^Detalle de movimientos|^\d{2} FEB/.test(l))
         .join('\n');
-      const only = nuCuentaParser.parse(text);
+      const only = nuDebitoParser.parse(text);
       expect(only).toHaveLength(1);
       expect(only[0].category).toBe('Rendimientos');
     });
@@ -257,12 +257,12 @@ describe('nuCuentaParser', () => {
 
     it('dates December rows of a period that ends in January', () => {
       const text = sample({ period: 'del 15 dic al 14 ene 2025' }).replace('15 FEB 2024 TIENDA', '20 DIC TIENDA');
-      const row = nuCuentaParser.parse(text).find(t => t.description === 'TIENDA EJEMPLO Compra')!;
+      const row = nuDebitoParser.parse(text).find(t => t.description === 'TIENDA EJEMPLO Compra')!;
       expect(row.date).toBe('2024-12-20');
     });
 
     it('returns nothing without a statement period', () => {
-      expect(nuCuentaParser.parse(SAMPLE.replace('Periodo:', 'x'))).toEqual([]);
+      expect(nuDebitoParser.parse(SAMPLE.replace('Periodo:', 'x'))).toEqual([]);
     });
   });
 });
