@@ -13,6 +13,7 @@ Bank statement parsing engine — converts credit card PDF statements into struc
 | Nubank | BR | Credit Card | Yes |
 | Porto Seguro | BR | Credit Card | Yes |
 | PC Financial Mastercard | CA | Credit Card | Yes |
+| Nu | MX | Debit Account | Yes |
 | Chase | US | Credit Card | No |
 
 ## Usage
