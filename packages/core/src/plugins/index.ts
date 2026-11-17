@@ -8,7 +8,7 @@ import { portoSeguroCartaoParser } from './BR/porto-seguro-cartao/index';
 import { pcFinancialMastercardParser } from './CA/pc-financial-mastercard/index';
 import { chaseCreditParser } from './US/chase-credit/index';
 import { hsbcDebitoParser } from './MX/hsbc-debito/index';
-import { nuCuentaParser } from './MX/nu-cuenta/index';
+import { nuDebitoParser } from './MX/nu-debito/index';
 import { openbankCreditoParser } from './MX/openbank-credito/index';
 import { openbankDebitoParser } from './MX/openbank-debito/index';
 
@@ -20,7 +20,7 @@ export const plugins: BankParser[] = [
   openbankDebitoParser,
   openbankCreditoParser,
   hsbcDebitoParser,
-  nuCuentaParser,
+  nuDebitoParser,
   bradescoCartaoParser,
   c6CartaoParser,
   interCartaoParser,

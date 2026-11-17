@@ -199,7 +199,7 @@ banksheet/
 │   │           ├── MX/         # Mexican bank plugins
 │   │           │   ├── utils.ts
 │   │           │   ├── hsbc-debito/
-│   │           │   ├── nu-cuenta/
+│   │           │   ├── nu-debito/
 │   │           │   ├── openbank-common.ts
 │   │           │   ├── openbank-credito/
 │   │           │   └── openbank-debito/

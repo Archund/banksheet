@@ -31,14 +31,14 @@ Both tables are missing when the month has no movements.
   name line looks like movement detail, so the line right before `Cuenta Nu:` is dropped.
 
 ## Transaction fields
-- `account`: `Nu Cuenta` or `Nu Cajitas`. All Cajitas share one account; the Cajita's name stays in the description.
+- `account`: `Nu Débito` or `Nu Cajitas`. All Cajitas share one account; the Cajita's name stays in the description.
 - **Freezing / unfreezing** (`Congelaste saldo hasta el ... en tu Cajita: X`, `Descongelamos saldo de tu
   Cajita: X`) moves money between "Disponible" and "Congelado" inside the Cajitas. The Cajitas total does
   not change, so these rows are skipped.
 - **Cajita transfers** appear in both tables with opposite signs. Same-day mirrored rows are paired (same
   title first, then any row mentioning a Cajita): both sides get the same `externalId`
   (`nu-xfer:<date>:<amount>:<n>`) and each other's account as `counterAccount`, so an importer sees one transfer.
-- Other rows: `externalId` = `nu-<cuenta|cajitas>:<date>:<amount in cents>:<n>`.
+- Other rows: `externalId` = `nu-debito:<cuenta|cajitas>:<date>:<amount in cents>:<n>`.
 - **Payee**: for SPEI movements, `<BANK> <last 4 digits of the counterparty account>`; for debit card rows
   (`<MERCHANT> Compra`, `<MERCHANT> Devolución`), the merchant.
 - **Credit card payment** (`Pago a tu tarjeta de crédito Nu`): `counterAccount` = `Nu Tarjeta de Crédito`.

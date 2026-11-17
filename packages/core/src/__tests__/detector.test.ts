@@ -29,7 +29,7 @@ describe('plugin registry', () => {
     expect(list).toContainEqual({ name: 'Openbank Débito', country: 'MX' });
     expect(list).toContainEqual({ name: 'Openbank Crédito', country: 'MX' });
     expect(list).toContainEqual({ name: 'HSBC Débito', country: 'MX' });
-    expect(list).toContainEqual({ name: 'Nu Cuenta', country: 'MX' });
+    expect(list).toContainEqual({ name: 'Nu Débito', country: 'MX' });
   });
 
   it('getParserByName finds Bradesco Cartão', () => {
@@ -187,7 +187,7 @@ describe('detectBank', () => {
 
   it('detects Nu Mexico by issuer + account label', () => {
     const result = detectBank('Cuenta Nu: 00000000001\nNu México Financiera, S.A. de C.V., S.F.P.', plugins);
-    expect(result?.name).toBe('Nu Cuenta');
+    expect(result?.name).toBe('Nu Débito');
   });
 
   it('does not detect Nu Mexico from the account label alone', () => {
