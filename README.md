@@ -10,7 +10,7 @@
   <a href="https://github.com/tio-ze-rj/banksheet/actions/workflows/ci.yml"><img src="https://github.com/tio-ze-rj/banksheet/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/node-18%2B-brightgreen.svg" alt="Node.js 18+"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
-  <a href="https://github.com/tio-ze-rj/banksheet"><img src="https://img.shields.io/badge/parsers-11-orange.svg" alt="11 parsers"></a>
+  <a href="https://github.com/tio-ze-rj/banksheet"><img src="https://img.shields.io/badge/parsers-12-orange.svg" alt="12 parsers"></a>
 </p>
 
 ## Features
@@ -33,6 +33,7 @@
 | BR | Porto Seguro | Credit card | Yes |
 | CA | PC Financial Mastercard | Credit card | Yes |
 | MX | HSBC | Debit account | Yes |
+| MX | Nu | Debit account | Yes |
 | MX | Openbank | Credit card | Yes |
 | MX | Openbank | Debit account | Yes |
 | US | Chase | Credit card | No |
@@ -164,7 +165,7 @@ Create a `README.md` in your plugin folder documenting:
 
 ### Tips
 
-- Each country has shared utilities: `plugins/BR/utils.ts` (`parseBRAmount`, `PT_MONTHS`), `plugins/CA/utils.ts` (`parseCADAmount`, `EN_MONTHS`), `plugins/MX/utils.ts` (`parseMXAmount`, ID helpers).
+- Each country has shared utilities: `plugins/BR/utils.ts` (`parseBRAmount`, `PT_MONTHS`), `plugins/CA/utils.ts` (`parseCADAmount`, `EN_MONTHS`), `plugins/MX/utils.ts` (`parseMXAmount`, `ES_MONTHS`, ID helpers).
 - Pieces shared by several plugins of the same bank go next to them (e.g. `plugins/MX/openbank-common.ts`: account names, card payment IDs); everything else stays in the plugin folder.
 - Use `pdf-parse` or `pdfjs-dist` to inspect the raw extracted text — it often looks very different from the visual PDF.
 - If the extracted text is unreadable (`×ÙÖÄäÃãÖ` instead of `PRODUCTO`), the PDF is probably EBCDIC-encoded: call `normalizeEbcdic(text)` from `plugins/ebcdic.ts` at the start of `detect` and `parse` (see `plugins/MX/hsbc-debito`).
@@ -198,6 +199,7 @@ banksheet/
 │   │           ├── MX/         # Mexican bank plugins
 │   │           │   ├── utils.ts
 │   │           │   ├── hsbc-debito/
+│   │           │   ├── nu-cuenta/
 │   │           │   ├── openbank-common.ts
 │   │           │   ├── openbank-credito/
 │   │           │   └── openbank-debito/

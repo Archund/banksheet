@@ -17,7 +17,7 @@ describe('plugin registry', () => {
 
   it('listParsers returns all registered parsers', () => {
     const list = listParsers();
-    expect(list).toHaveLength(11);
+    expect(list).toHaveLength(12);
     expect(list).toContainEqual({ name: 'Bradesco Cartão', country: 'BR' });
     expect(list).toContainEqual({ name: 'C6 Cartão', country: 'BR' });
     expect(list).toContainEqual({ name: 'Inter Cartão', country: 'BR' });
@@ -29,6 +29,7 @@ describe('plugin registry', () => {
     expect(list).toContainEqual({ name: 'Openbank Débito', country: 'MX' });
     expect(list).toContainEqual({ name: 'Openbank Crédito', country: 'MX' });
     expect(list).toContainEqual({ name: 'HSBC Débito', country: 'MX' });
+    expect(list).toContainEqual({ name: 'Nu Cuenta', country: 'MX' });
   });
 
   it('getParserByName finds Bradesco Cartão', () => {
@@ -182,6 +183,15 @@ describe('detectBank', () => {
 
   it('does not detect HSBC from the bank name alone', () => {
     expect(detectBank('Transferencia recibida de HSBC', plugins)).toBeUndefined();
+  });
+
+  it('detects Nu Mexico by issuer + account label', () => {
+    const result = detectBank('Cuenta Nu: 00000000001\nNu México Financiera, S.A. de C.V., S.F.P.', plugins);
+    expect(result?.name).toBe('Nu Cuenta');
+  });
+
+  it('does not detect Nu Mexico from the account label alone', () => {
+    expect(detectBank('Transferencia a Cuenta Nu', plugins)).toBeUndefined();
   });
 
   it('returns undefined for unknown text', () => {

@@ -8,17 +8,19 @@ import { portoSeguroCartaoParser } from './BR/porto-seguro-cartao/index';
 import { pcFinancialMastercardParser } from './CA/pc-financial-mastercard/index';
 import { chaseCreditParser } from './US/chase-credit/index';
 import { hsbcDebitoParser } from './MX/hsbc-debito/index';
+import { nuCuentaParser } from './MX/nu-cuenta/index';
 import { openbankCreditoParser } from './MX/openbank-credito/index';
 import { openbankDebitoParser } from './MX/openbank-debito/index';
 
 /** All registered bank parsers */
 export const plugins: BankParser[] = [
-  // Openbank and HSBC go first: their detectors need two bank-specific markers,
+  // Openbank, HSBC and Nu go first: their detectors need two bank-specific markers,
   // while transfer concepts in their statements can name other banks ("NUBANK",
   // "BANCO INTER"...) that the broader detectors below would match.
   openbankDebitoParser,
   openbankCreditoParser,
   hsbcDebitoParser,
+  nuCuentaParser,
   bradescoCartaoParser,
   c6CartaoParser,
   interCartaoParser,

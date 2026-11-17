@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { compactDate, occurrenceCounter, parseMXAmount, round2, toCents } from '../utils';
+import { ES_MONTHS, compactDate, occurrenceCounter, parseMXAmount, round2, toCents } from '../utils';
 
 describe('MX utils', () => {
   it('parseMXAmount handles thousands and currency sign', () => {
@@ -24,5 +24,12 @@ describe('MX utils', () => {
   it('occurrenceCounter numbers repeated keys independently', () => {
     const next = occurrenceCounter();
     expect([next('a'), next('b'), next('a'), next('a')]).toEqual([1, 1, 2, 3]);
+  });
+
+  it('ES_MONTHS maps Spanish month abbreviations', () => {
+    expect(ES_MONTHS.ene).toBe('01');
+    expect(ES_MONTHS.ago).toBe('08');
+    expect(ES_MONTHS.dic).toBe('12');
+    expect(Object.keys(ES_MONTHS)).toHaveLength(12);
   });
 });
