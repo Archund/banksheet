@@ -123,7 +123,8 @@ export const openbankCreditoParser: BankParser = {
    * Every row gets a deterministic `externalId`; identical lines are numbered.
    * Purchases get the merchant as `payee`. A card payment ("Pago de tarjeta de
    * crédito") is a transfer from the debit account and shares its `externalId`
-   * with the withdrawal in the debit statement, so it is imported only once.
+   * with the withdrawal in the debit statement, so it is imported only once. The ID uses the
+   * posting date, which is the date the debit statement prints (it differs on weekends).
    */
   parse(text: string): Transaction[] {
     const cutoff = text.match(FECHA_CORTE_RE);
@@ -171,7 +172,10 @@ export const openbankCreditoParser: BankParser = {
       if (payee) tx.payee = payee;
       if (isCardPayment(description) && amount > 0) {
         tx.counterAccount = OPENBANK_ACCOUNTS.debito;
-        tx.externalId = cardPaymentExternalId(date, amount, nextCardPayment(`${date}|${cents}`));
+        // The debit statement prints the posting date (fecha de cargo): on a weekend payment it
+        // differs from the operation date, so the shared ID uses the posting date
+        const posted = `${byyyy}-${bmm}-${bdd}`;
+        tx.externalId = cardPaymentExternalId(posted, amount, nextCardPayment(`${posted}|${cents}`));
       }
       transactions.push(tx);
     };
