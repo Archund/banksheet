@@ -19,6 +19,10 @@ const MSI_RE =
   /^(\d{2})-(\d{2})-(\d{4})\s+(.+?)\s+\$\s*([\d,]+\.\d{2})\s+\$\s*([\d,]+\.\d{2})\s+\$\s*([\d,]+\.\d{2})\s+(\d{3})\s+[\d.]+\s*%\s*$/;
 
 const FECHA_CORTE_RE = /^Fecha de corte\s+(\d{2})-(\d{2})-(\d{4})/m;
+// Credits counted in the movement tables, listed or not (a purchase converted to
+// installments after it posted is credited back here without a row of its own)
+const TOTAL_ABONOS_RE = /^Total abonos\s+-\s*\$\s*([\d,]+\.\d{2})\s*$/gm;
+const MAX_CONVERSION_CANDIDATES = 12;
 const NOT_CONTINUATION_RE = /^(---|Página\b|Notas\b|Número de cuenta|Fecha\b|Tarjeta\b|Total\b)/;
 const MAX_ROW_LINES = 8;
 
@@ -73,6 +77,19 @@ function formatMXN(n: number): string {
   return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+/** The candidates whose amounts add up to `target` cents, when exactly one such set exists. */
+function uniqueSubsetWithSum<T>(items: T[], cents: (item: T) => number, target: number): T[] | undefined {
+  if (items.length === 0 || items.length > MAX_CONVERSION_CANDIDATES) return undefined;
+  let found: T[] | undefined;
+  for (let mask = 1; mask < 1 << items.length; mask++) {
+    const subset = items.filter((_, i) => mask & (1 << i));
+    if (subset.reduce((s, x) => s + cents(x), 0) !== target) continue;
+    if (found) return undefined; // ambiguous
+    found = subset;
+  }
+  return found;
+}
+
 export const openbankCreditoParser: BankParser = {
   name: 'Openbank Crédito',
   country: 'MX',
@@ -97,6 +114,11 @@ export const openbankCreditoParser: BankParser = {
    *   cut-off date (fecha de corte), with the installment number in the description
    *   and the original purchase in `notes`.
    * - Installments WITH interest are not parsed yet (no sample available).
+   * - A purchase converted to installments AFTER it posted keeps its regular charge,
+   *   and the statement credits the original amount back without listing the credit
+   *   (it only shows in "Total abonos"). When the unlisted credits add up exactly to
+   *   the original amounts of some first installments (001), one credit per plan is
+   *   added at the cut-off date, so the card balance stays right.
    *
    * Every row gets a deterministic `externalId`; identical lines are numbered.
    * Purchases get the merchant as `payee`. A card payment ("Pago de tarjeta de
@@ -108,6 +130,8 @@ export const openbankCreditoParser: BankParser = {
     const cutoffDate = cutoff ? `${cutoff[3]}-${cutoff[2]}-${cutoff[1]}` : undefined;
 
     const transactions: Transaction[] = [];
+    // First installments (001), candidates for a conversion credit
+    const firstInstallments: { tx: Transaction; base: string; purchaseDate: string; original: number }[] = [];
     const nextRegular = occurrenceCounter();
     const nextMsi = occurrenceCounter();
     const nextCardPayment = occurrenceCounter();
@@ -186,6 +210,7 @@ export const openbankCreditoParser: BankParser = {
       const payee = extractPayee(base);
       if (payee) tx.payee = payee;
       transactions.push(tx);
+      if (installment === 1) firstInstallments.push({ tx, base, purchaseDate, original });
     };
 
     for (const rawLine of text.split('\n')) {
@@ -233,6 +258,34 @@ export const openbankCreditoParser: BankParser = {
         if (section === 'regular') finishRegular(pending);
         else finishMsi(pending);
         pending = null;
+      }
+    }
+
+    // Conversions to installments: credits counted in "Total abonos" but not listed
+    const totals = [...text.matchAll(TOTAL_ABONOS_RE)].map(m => toCents(parseMXAmount(m[1])));
+    if (totals.length) {
+      const listed = transactions.filter(t => t.amount > 0).reduce((s, t) => s + toCents(t.amount), 0);
+      const unlisted = Math.max(...totals) - listed;
+      const converted = unlisted > 0
+        ? uniqueSubsetWithSum(firstInstallments, p => toCents(p.original), unlisted)
+        : undefined;
+      for (const plan of converted ?? []) {
+        const originalCents = toCents(plan.original);
+        const tx: Transaction = {
+          date: plan.tx.date,
+          description: `${plan.base} (conversión a MSI)`,
+          amount: plan.original,
+          currency: 'MXN',
+          type: 'credit',
+          raw: plan.tx.raw,
+          account: OPENBANK_ACCOUNTS.credito,
+          externalId: `openbank-credito-msi-conversion:${compactDate(plan.purchaseDate)}:${originalCents}:1`,
+          bookingDate: plan.tx.bookingDate,
+          notes: `Abono por diferir a meses sin intereses la compra del ${plan.purchaseDate} (${formatMXN(plan.original)}); incluido en "Total abonos" del estado de cuenta, sin renglón propio`,
+        };
+        if (plan.tx.exchangeRate !== undefined) tx.exchangeRate = plan.tx.exchangeRate;
+        if (plan.tx.payee) tx.payee = plan.tx.payee;
+        transactions.push(tx);
       }
     }
 

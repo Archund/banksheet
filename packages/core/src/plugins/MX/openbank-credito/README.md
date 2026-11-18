@@ -22,6 +22,11 @@
   amount and remaining balance go to `notes`. Change the `date` assignment in `finishMsi` if you prefer the
   purchase date instead.
 - `externalId` = purchase date + original amount + installment number, so every month is distinct and stable.
+- **Converted after posting.** A purchase deferred to MSI after it was charged keeps its regular row, and the
+  statement credits the original amount back without listing it: the credit only shows in `Total abonos`. When
+  `Total abonos` minus the listed credits equals the original amounts of exactly one set of first installments
+  (`001`), the parser adds one credit per plan, `... (conversión a MSI)`, dated at the cut-off, with ID
+  `openbank-credito-msi-conversion:<purchase date>:<original cents>:1`.
 
 ## What the parser adds
 - **Payee**: the merchant, i.e. the text after `Compra [con Google/Apple Pay] [en línea] en` /
@@ -50,6 +55,10 @@ What the parser does not account for, or could not be checked against a sample:
 - **Installments are monthly charges, not purchases.** The purchase itself is never exported as one row; each
   month adds the required payment, dated at the cut-off date. The total number of installments is derived
   (`original / payment`, rounded). Early settlement or a cancelled plan is untested.
+- **Conversion credits are inferred, not read.** They are added only when the unlisted part of `Total abonos`
+  matches the originals of one unique set of first installments; any other unlisted credit (or an ambiguous
+  match) is left out, and the month will not reconcile until it is entered by hand. Verified on one sample
+  (a foreign purchase whose regular charge and credit-back differ by the exchange-rate difference).
 - **Foreign purchases:** the statement prints only the exchange rate, not the original amount or currency
   (`por -`), so neither is exported.
 - **Additional cards.** The "Tarjeta adicional" tables were empty in the samples; their rows would be parsed
