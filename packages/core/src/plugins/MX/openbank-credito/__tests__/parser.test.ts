@@ -240,4 +240,50 @@ describe('openbankCreditoParser', () => {
       expect(openbankCreditoParser.parse(text)).toEqual([]);
     });
   });
+
+  describe('purchases converted to installments after posting', () => {
+    // The hotel was charged normally, then deferred to 3 MSI: the statement keeps the
+    // charge, lists installment 1, and counts the credit-back only in "Total abonos".
+    const converted = (totalAbonos: string) =>
+      [
+        'Openbank',
+        'Fecha de corte 26-02-2026',
+        'COMPRAS Y CARGOS DIFERIDOS A MESES SIN INTERESES',
+        '17-02-2026 Compra en línea en Hotel Demo, Ciudad Ejemplo',
+        '$ 3,000.00 $ 3,000.00 $ 1,000.00 001 0.0 %',
+        '19-02-2026 Compra en línea en Tienda Demo $ 600.00 $ 600.00 $ 200.00 001 0.0 %',
+        'CARGOS, ABONOS Y COMPRAS REGULARES (NO A MESES)',
+        '18-02-2026 19-02-2026 Compra en línea en Hotel Demo, Ciudad Ejemplo, por -, tipo de cambio 0.0585 - $ 3,004.50',
+        '20-02-2026 20-02-2026 Pago de tarjeta de crédito + $ 500.00',
+        'Total cargos + $ 4,204.50',
+        `Total abonos - $ ${totalAbonos}`,
+      ].join('\n');
+
+    it('adds the unlisted credit-back, so the rows match the statement totals', () => {
+      const txns = openbankCreditoParser.parse(converted('3,500.00'));
+      const credit = txns.find(t => t.description.includes('conversión a MSI'));
+      expect(credit).toMatchObject({
+        date: '2026-02-26',
+        description: 'Compra en línea en Hotel Demo, Ciudad Ejemplo (conversión a MSI)',
+        amount: 3000,
+        type: 'credit',
+        account: OPENBANK_ACCOUNTS.credito,
+        payee: 'Hotel Demo',
+        externalId: 'openbank-credito-msi-conversion:20260217:300000:1',
+      });
+      // -3,004.50 charge - 1,000 - 200 installments + 500 payment + 3,000 credit-back
+      expect(sum(txns.map(t => t.amount))).toBe(-704.5);
+      expect(sum(txns.filter(t => t.amount > 0).map(t => t.amount))).toBe(3500);
+    });
+
+    it('adds nothing when every credit is listed', () => {
+      const txns = openbankCreditoParser.parse(converted('500.00'));
+      expect(txns.some(t => t.description.includes('conversión'))).toBe(false);
+    });
+
+    it('adds nothing when the unlisted credits match no first installments', () => {
+      const txns = openbankCreditoParser.parse(converted('1,234.56'));
+      expect(txns.some(t => t.description.includes('conversión'))).toBe(false);
+    });
+  });
 });
