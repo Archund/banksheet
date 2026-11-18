@@ -33,7 +33,7 @@
   `Devolución de compra en` up to the first comma (city and country follow). Top-ups (`Recarga <operador> de
   $...`) get the carrier, promotions get `Openbank`. Rows with no recognisable merchant have no payee.
 - **Card payments** (`Pago de tarjeta de crédito`) are a transfer from the debit account: `counterAccount` is
-  the debit account and the `externalId` is `openbank-pago-tdc:<date>:<amount>:<n>`, the same ID the debit
+  the debit account and the `externalId` is `openbank-pago-tdc:<posting date>:<amount>:<n>`, the same ID the debit
   statement gives the withdrawal, so an importer that deduplicates on external ID records it once.
 
 ## Verified
@@ -48,10 +48,13 @@ What the parser does not account for, or could not be checked against a sample:
   - months where interest, fees or IVA are charged are untested. In the samples these only appear (as
     `$ 0.00`) in summary boxes, not as movement rows; if a statement prints them as regular movements they
     are parsed like any other row, otherwise they are missing from the output.
-- **Card payment link.** It assumes the payment is made from the Openbank debit account and that both
-  statements print it on the same day. This was confirmed for a weekday payment; a weekend payment (operation
-  date and posting date differ) is unverified. A payment from another bank labeled the same way would be
-  linked to the debit account too (fix `counterAccount` in the importer if so).
+- **Card payment link.** It assumes the payment is made from the Openbank debit account. The shared ID uses
+  the card statement's posting date (fecha de cargo), which is the date the debit statement prints; verified
+  for weekday and weekend payments (paid Saturday, posted Monday). It fails when the debit statement labels
+  the payment only as a blank-concept `Retiro` (seen once, July 2026): the debit row then has its own ID and
+  no counter account, and the payment is recorded twice unless the debit-side withdrawal is removed or paired
+  in a separate step. A payment from another bank labeled the same way would be linked
+  to the debit account too (fix `counterAccount` in the importer if so).
 - **Installments are monthly charges, not purchases.** The purchase itself is never exported as one row; each
   month adds the required payment, dated at the cut-off date. The total number of installments is derived
   (`original / payment`, rounded). Early settlement or a cancelled plan is untested.

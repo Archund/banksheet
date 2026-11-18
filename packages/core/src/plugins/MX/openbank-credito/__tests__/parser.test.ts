@@ -133,6 +133,19 @@ describe('openbankCreditoParser', () => {
       expect(payment.payee).toBeUndefined();
     });
 
+    it('builds the payment ID from the posting date, which the debit statement prints', () => {
+      // Paid on a Saturday, posted on Monday: the debit statement shows Monday
+      const text = [
+        'Openbank',
+        'CARGOS, ABONOS Y COMPRAS REGULARES (NO A MESES)',
+        '13-06-2026 15-06-2026 Pago de tarjeta de crédito + $ 1,234.56',
+      ].join('\n');
+      const [payment] = openbankCreditoParser.parse(text);
+      expect(payment.date).toBe('2026-06-13');
+      expect(payment.bookingDate).toBe('2026-06-15');
+      expect(payment.externalId).toBe('openbank-pago-tdc:20260615:123456:1');
+    });
+
     it('extracts the merchant as payee', () => {
       const payees = (amount: number) => txns.filter(t => t.amount === amount).map(t => t.payee);
       expect(payees(-250.5)).toEqual(['Tienda Ejemplo']);

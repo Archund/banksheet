@@ -54,9 +54,10 @@ What the parser does not account for, or could not be checked against a sample:
 - **Links to other banks.** Transfers to/from other banks (SPEI) stay as plain deposits/withdrawals with a
   payee (`<BANK> <last 4>`); they are not linked to the matching row of another bank's statement. The bank
   reference stays in the description because it wraps unpredictably.
-- **Card payment on a different day.** The shared `externalId` with the credit card statement uses the date
-  printed in each statement. It was confirmed for a weekday payment; a payment made on a weekend (operation
-  date and posting date differ in the card statement) is unverified and may not match.
+- **Card payment link.** The shared `externalId` with the credit card statement uses this statement's date,
+  which is the card statement's posting date; verified for weekday and weekend payments. A card payment
+  printed with a blank concept is exported as a plain `Retiro` with its own ID and no counter account, so it
+  does not link (seen once, July 2026); the card statement's payment row then duplicates it in an importer.
 - **Unlabeled interest is a guess.** With a blank concept, an unpaired Apartado deposit or withdrawal of up to
   0.2% of the balance is treated as interest or its reversal. A real movement that small would be mislabeled.
 - **Blank concepts.** Rows without a concept and without a transfer partner are exported as `Depósito` /
