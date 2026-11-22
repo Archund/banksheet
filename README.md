@@ -10,7 +10,7 @@
   <a href="https://github.com/tio-ze-rj/banksheet/actions/workflows/ci.yml"><img src="https://github.com/tio-ze-rj/banksheet/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/node-18%2B-brightgreen.svg" alt="Node.js 18+"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
-  <a href="https://github.com/tio-ze-rj/banksheet"><img src="https://img.shields.io/badge/parsers-9-orange.svg" alt="9 parsers"></a>
+  <a href="https://github.com/tio-ze-rj/banksheet"><img src="https://img.shields.io/badge/parsers-10-orange.svg" alt="10 parsers"></a>
 </p>
 
 ## Features
@@ -33,6 +33,7 @@
 | BR | Porto Seguro | Credit card | Yes |
 | CA | PC Financial Mastercard | Credit card | Yes |
 | MX | Nu | Debit account | Yes |
+| MX | Nu | Credit card | Yes |
 | US | Chase | Credit card | No |
 
 Mostly credit card statements for now. More statement types (checking, savings) are welcome — see [Adding a Plugin](#adding-a-plugin).

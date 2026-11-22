@@ -7,12 +7,15 @@ import { nubankCartaoParser } from './BR/nubank-cartao/index';
 import { portoSeguroCartaoParser } from './BR/porto-seguro-cartao/index';
 import { pcFinancialMastercardParser } from './CA/pc-financial-mastercard/index';
 import { chaseCreditParser } from './US/chase-credit/index';
+import { nuCreditoParser } from './MX/nu-credito/index';
 import { nuDebitoParser } from './MX/nu-debito/index';
 
 /** All registered bank parsers */
 export const plugins: BankParser[] = [
   // Nu goes first: its statements name the banks of transfer counterparties
   // ("NUBANK", "BANCO INTER"...), which the broader detectors below would match.
+  // Nu Crédito before Nu Débito: a card payment from the account prints "con cuenta Nu".
+  nuCreditoParser,
   nuDebitoParser,
   bradescoCartaoParser,
   c6CartaoParser,

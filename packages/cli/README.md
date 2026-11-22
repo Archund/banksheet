@@ -50,7 +50,7 @@ banksheet list
 
 ## Supported Banks
 
-Bradesco, C6 Bank, Inter, Itaú, Nubank and Porto Seguro (BR), PC Financial Mastercard (CA), Nu (MX), and Chase (US). Run `banksheet list` for the current list.
+Bradesco, C6 Bank, Inter, Itaú, Nubank and Porto Seguro (BR), PC Financial Mastercard (CA), Nu debit and credit card (MX), and Chase (US). Run `banksheet list` for the current list.
 
 ## Privacy
 
