@@ -10,7 +10,7 @@
   <a href="https://github.com/tio-ze-rj/banksheet/actions/workflows/ci.yml"><img src="https://github.com/tio-ze-rj/banksheet/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/node-18%2B-brightgreen.svg" alt="Node.js 18+"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
-  <a href="https://github.com/tio-ze-rj/banksheet"><img src="https://img.shields.io/badge/parsers-12-orange.svg" alt="12 parsers"></a>
+  <a href="https://github.com/tio-ze-rj/banksheet"><img src="https://img.shields.io/badge/parsers-13-orange.svg" alt="13 parsers"></a>
 </p>
 
 ## Features
@@ -34,6 +34,7 @@
 | CA | PC Financial Mastercard | Credit card | Yes |
 | MX | HSBC | Debit account | Yes |
 | MX | Nu | Debit account | Yes |
+| MX | Nu | Credit card | Yes |
 | MX | Openbank | Credit card | Yes |
 | MX | Openbank | Debit account | Yes |
 | US | Chase | Credit card | No |

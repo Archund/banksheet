@@ -8,6 +8,7 @@ import { portoSeguroCartaoParser } from './BR/porto-seguro-cartao/index';
 import { pcFinancialMastercardParser } from './CA/pc-financial-mastercard/index';
 import { chaseCreditParser } from './US/chase-credit/index';
 import { hsbcDebitoParser } from './MX/hsbc-debito/index';
+import { nuCreditoParser } from './MX/nu-credito/index';
 import { nuDebitoParser } from './MX/nu-debito/index';
 import { openbankCreditoParser } from './MX/openbank-credito/index';
 import { openbankDebitoParser } from './MX/openbank-debito/index';
@@ -20,6 +21,8 @@ export const plugins: BankParser[] = [
   openbankDebitoParser,
   openbankCreditoParser,
   hsbcDebitoParser,
+  // Nu Crédito before Nu Débito: a card payment from the account prints "con cuenta Nu".
+  nuCreditoParser,
   nuDebitoParser,
   bradescoCartaoParser,
   c6CartaoParser,

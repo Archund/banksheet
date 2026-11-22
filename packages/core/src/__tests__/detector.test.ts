@@ -17,7 +17,7 @@ describe('plugin registry', () => {
 
   it('listParsers returns all registered parsers', () => {
     const list = listParsers();
-    expect(list).toHaveLength(12);
+    expect(list).toHaveLength(13);
     expect(list).toContainEqual({ name: 'Bradesco Cartão', country: 'BR' });
     expect(list).toContainEqual({ name: 'C6 Cartão', country: 'BR' });
     expect(list).toContainEqual({ name: 'Inter Cartão', country: 'BR' });
@@ -30,6 +30,7 @@ describe('plugin registry', () => {
     expect(list).toContainEqual({ name: 'Openbank Crédito', country: 'MX' });
     expect(list).toContainEqual({ name: 'HSBC Débito', country: 'MX' });
     expect(list).toContainEqual({ name: 'Nu Débito', country: 'MX' });
+    expect(list).toContainEqual({ name: 'Nu Crédito', country: 'MX' });
   });
 
   it('getParserByName finds Bradesco Cartão', () => {
